@@ -1,0 +1,11 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  justify-content: center;
+  align-content: center;
+  grid-template-rows: repeat(3, 100px);
+}
+
+button {
+  cursor: pointer;
+}

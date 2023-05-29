@@ -1,0 +1,65 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable react/display-name */
+import { memo, useCallback, useState, useMemo } from "react";
+import './App.css';
+
+const winningCombinations = new Set([
+  '012', '345', '678',
+  '036', '147', '258',
+  '048', '246',
+])
+
+const calculateWinner = (squares) => {
+  for (const [a, b, c] of winningCombinations) {
+    if (squares[a] && squares[a] === squares[b] && squares[b] === squares[c]) {
+      return squares[a];
+    }
+  }
+}
+
+const initialBoard = Array(9).fill(null);
+
+const Square = memo(({ value, fillValue, index }) => {
+  const onClick = useCallback(() => fillValue(index), [fillValue, index])
+  return <button onClick={onClick}>{value}</button>
+});
+
+const Board = memo(() => {
+
+  const [squares, setSquares] = useState(initialBoard);
+  const [xIsNext, setXIsNext] = useState(true);
+
+  const fillValue = useCallback((index) => {
+    if (squares[index] || calculateWinner(squares)) {
+      return;
+    }
+    const clone = [...squares];
+    clone[index] = xIsNext ? 'X' : 'O';
+    setSquares(clone);
+    setXIsNext(prev => !prev);
+  }, [squares, xIsNext]);
+
+
+  const resetGame = useCallback(() => {
+    setSquares(initialBoard);
+    setXIsNext(true);
+  }, []);
+
+  const renderSquare = useCallback((value, index) => <Square value={value} fillValue={fillValue} index={index} key={index} />, [fillValue]);
+
+  const winner = useMemo(() => calculateWinner(squares), [squares])
+  const status = useMemo(() => winner ? `Winner: ${winner}` : `Next Player: ${xIsNext ? 'X' : 'O'}`, [winner, xIsNext]);
+
+  return (
+    <>
+      <div className="board">
+        {squares.map(renderSquare)}
+      </div>
+      <h3>{status}</h3>
+      <button onClick={resetGame}>Reset</button>
+    </>
+
+  )
+});
+
+export default Board;
