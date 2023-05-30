@@ -24,10 +24,7 @@ const Square = memo(({ value, fillValue, index }) => {
   return <button onClick={onClick}>{value}</button>
 });
 
-const Board = memo(() => {
-
-  const [squares, setSquares] = useState(initialBoard);
-  const [xIsNext, setXIsNext] = useState(true);
+const Board = memo(({ squares, xIsNext, handlePlay, resetGame }) => {
 
   const fillValue = useCallback((index) => {
     if (squares[index] || calculateWinner(squares)) {
@@ -35,15 +32,8 @@ const Board = memo(() => {
     }
     const clone = [...squares];
     clone[index] = xIsNext ? 'X' : 'O';
-    setSquares(clone);
-    setXIsNext(prev => !prev);
-  }, [squares, xIsNext]);
-
-
-  const resetGame = useCallback(() => {
-    setSquares(initialBoard);
-    setXIsNext(true);
-  }, []);
+    handlePlay(clone)
+  }, [handlePlay, squares, xIsNext]);
 
   const renderSquare = useCallback((value, index) => <Square value={value} fillValue={fillValue} index={index} key={index} />, [fillValue]);
 
@@ -62,4 +52,42 @@ const Board = memo(() => {
   )
 });
 
-export default Board;
+const Move = memo(({ move, jumpTo }) => {
+  const description = useMemo(() => move === 0 ? 'game start' : `#${move}`, [move])
+  return <button onClick={() => jumpTo(move)}>Go to{description}</button>
+})
+
+
+const Game = memo(() => {
+
+  const [history, setHistory] = useState([initialBoard]);
+  const [currentMove, setCurrentMove] = useState(0);
+  const xIsNext = useMemo(() => currentMove % 2 === 0, [currentMove])
+  const lastSquares = useMemo(() => history[currentMove], [currentMove, history]);
+
+  const onPlay = useCallback((nextSquares) => {
+    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares]
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+  }, [currentMove, history]);
+
+  const resetGame = useCallback(() => {
+    setHistory([initialBoard]);
+    setCurrentMove(0);
+  }, []);
+
+  const jumpTo = useCallback((nextMove) => {
+    setCurrentMove(nextMove);
+  }, [])
+
+  const renderMove = useCallback((squares, index) => <Move move={index} key={index} jumpTo={jumpTo} />, [jumpTo]);
+
+  return (
+    <>
+      <Board squares={lastSquares} xIsNext={xIsNext} handlePlay={onPlay} resetGame={resetGame} />
+      {history.map(renderMove)}
+    </>
+  );
+})
+
+export default Game;
